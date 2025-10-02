@@ -1,22 +1,28 @@
 import React, { useMemo, useState, useEffect } from "react";
 
 // =============================
-// The Citadel — Landing MVP (shareable preview)
-// Intro band (left: model explanation + CTAs, right: Hall mock).
-// Below intro: The Herald in full width with 3-column layout
-//   - Left rail: Commons (within Halls) snapshot + Boards (locked)
-//   - Center: Herald feed (Project of the Day, Trending Post, Latest Posts)
-//   - Right rail: DM Requests + Active Chats
-// Adds: 3-step explainer under intro, realistic sample content, soft email CTA at bottom.
-// Simple reactions: Like + Comment. Reputation = Rep.
-// Posts are expanded (title + body + tags). Removed Live Works section per request.
+// The Citadel — Landing MVP (TypeScript-safe)
+// Intro band + 3-step explainer; Herald full-width (Posts expanded; no Live Works)
+// Left rail: Commons snapshot + Boards; Right rail: DM Requests + Active Chats
+// Simple reactions: Like + Comment; Reputation = Rep.
+// Added: explicit TypeScript types to fix build errors.
 // =============================
+
+// ---- Types ----
+interface Hall { name: string; desc: string }
+interface Common { name: string; desc: string; cta: string }
+interface Board { name: string; desc: string; requirementLabel: string; repThreshold: number; inviteOnly: boolean }
+interface Work { id: number; title: string; author: string; tags: string[]; status: string; likes: number; comments: number }
+interface PostItem { id: number; author: string; title: string; body: string; tags: string[]; replies: number; likes: number; time: string }
+interface DMRequest { id: string; from: string; rep: number; preview: string }
+interface DMActive { id: string; with: string; last: string }
+interface TestResult { name: string; pass: boolean; message: string }
 
 // ---- Mock user + reputation (for demo) ----
 const currentUser = { name: "Guest", rep: 1200 };
 
 // ---- Data: Halls (broad open groups) ----
-const halls = [
+const halls: Hall[] = [
   { name: "Builders Hall", desc: "Founders, PMs, engineers collaborating on product and growth." },
   { name: "Creators Hall", desc: "Design, content, product storytelling, and brand craft." },
   { name: "Go‑to‑Market Hall", desc: "Marketing, sales, ops — distribution and revenue." },
@@ -24,14 +30,14 @@ const halls = [
 ];
 
 // ---- Data: Commons (appear inside Halls; left rail shows a snapshot) ----
-const commons = [
+const commons: Common[] = [
   { name: "Hiring Board", desc: "Open roles, collab asks, co‑founder searches.", cta: "Post a role" },
   { name: "Showcase", desc: "Polished launches and milestone shout‑outs.", cta: "Share a win" },
   { name: "AMA", desc: "Ask me anything sessions with experienced operators.", cta: "Host an AMA" },
 ];
 
 // ---- Data: Boards (invite‑only, mod curated) ----
-const boards = [
+const boards: Board[] = [
   {
     name: "Founders Board",
     desc: "Curated founders discussing traction, hiring, and financing.",
@@ -49,14 +55,14 @@ const boards = [
 ];
 
 // ---- Data: sample Works (projects) used for Project of the Day ----
-const initialWorks = [
+const initialWorks: Work[] = [
   { id: 1, title: "Onboarding Funnel Revamp", author: "Sofia R.", tags: ["PM", "SaaS"], status: "Open to feedback", likes: 42, comments: 5 },
   { id: 2, title: "RAG Chat for Docs", author: "Jamal T.", tags: ["AI", "Backend"], status: "Seeking collaborator", likes: 67, comments: 12 },
   { id: 3, title: "POS → Insights Dashboard", author: "Alex K.", tags: ["Analytics", "Retail"], status: "Showcase", likes: 88, comments: 9 },
 ];
 
 // ---- Data: Posts (expanded: title + body + tags) ----
-const initialPosts = [
+const initialPosts: PostItem[] = [
   {
     id: 101,
     author: "Elena (PMM, Adobe)",
@@ -90,11 +96,11 @@ const initialPosts = [
 ];
 
 // ---- Data: DM rail ----
-const dmRequests = [
+const dmRequests: DMRequest[] = [
   { id: "rq1", from: "Maya", rep: 320, preview: "Question on seed deck trims" },
   { id: "rq2", from: "Jamal", rep: 1180, preview: "Collab on RAG chat evals" },
 ];
-const dmActive = [
+const dmActive: DMActive[] = [
   { id: "dm1", with: "Elena", last: "Thanks for the pricing note" },
   { id: "dm2", with: "Hiro", last: "Will try batch queries" },
 ];
@@ -116,8 +122,8 @@ function Card({ children, className = "" }) {
 }
 
 // --- Dev Tests ---
-function runDevTests({ works, posts, boards, halls, commons, currentUser }) {
-  const results = [];
+function runDevTests({ works, posts, boards, halls, commons, currentUser }: { works: Work[]; posts: PostItem[]; boards: Board[]; halls: Hall[]; commons: Common[]; currentUser: { name: string; rep: number } }) {
+  const results: TestResult[] = [];
   results.push({ name: "works populated", pass: Array.isArray(works) && works.length > 0, message: `len=${works.length}` });
   results.push({ name: "posts populated", pass: Array.isArray(posts) && posts.length > 0, message: `len=${posts.length}` });
   results.push({ name: "boards defined", pass: Array.isArray(boards) && boards.length > 0, message: boards.map(b=>b.name).join(", ") });
@@ -125,25 +131,25 @@ function runDevTests({ works, posts, boards, halls, commons, currentUser }) {
   results.push({ name: "commons defined", pass: Array.isArray(commons) && commons.length >= 1, message: commons.length.toString() });
   results.push({ name: "rep is numeric", pass: typeof currentUser.rep === "number" && currentUser.rep >= 0, message: `${currentUser.rep}` });
   const strings = [
-    ...works.map(w=>w.title),
-    ...posts.map(p=>`${p.title} ${p.body}`),
-    ...halls.map(h=>h.desc),
-    ...commons.map(c=>c.desc),
-    ...boards.map(b=>b.desc),
+    ...works.map((w: Work) => w.title),
+    ...posts.map((p: PostItem) => `${p.title} ${p.body}`),
+    ...halls.map((h: Hall) => h.desc),
+    ...commons.map((c: Common) => c.desc),
+    ...boards.map((b: Board) => b.desc),
   ];
   results.push({ name: "no raw '>' in literals", pass: strings.every(s => !String(s).includes(">")), message: "ok" });
   return results;
 }
 
 export default function App() {
-  const [works, setWorks] = useState(initialWorks);
-  const [posts, setPosts] = useState(initialPosts);
-  const [showWorkModal, setShowWorkModal] = useState(false);
-  const [showPostModal, setShowPostModal] = useState(false);
-  const [showCommentsFor, setShowCommentsFor] = useState(null); // id of Work or Post
-  const [showDmModal, setShowDmModal] = useState(null); // string author name
-  const [showTests, setShowTests] = useState(false);
-  const [testResults, setTestResults] = useState([]);
+  const [works, setWorks] = useState<Work[]>(initialWorks);
+  const [posts, setPosts] = useState<PostItem[]>(initialPosts);
+  const [, setShowWorkModal] = useState<boolean>(false);
+  const [, setShowPostModal] = useState<boolean>(false);
+  const [showCommentsFor, setShowCommentsFor] = useState<number | null>(null); // id of Work or Post
+  const [showDmModal, setShowDmModal] = useState<string | null>(null); // string author name
+  const [showTests, setShowTests] = useState<boolean>(false);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
 
   useEffect(() => {
     setTestResults(
@@ -152,15 +158,15 @@ export default function App() {
   }, []);
 
   // Project of the Day = highest likes among Works
-  const workOfTheDay = useMemo(() => works.reduce((a, b) => (a.likes > b.likes ? a : b), works[0]), [works]);
+  const workOfTheDay = useMemo<Work>(() => works.reduce((a: Work, b: Work) => (a.likes > b.likes ? a : b), works[0]), [works]);
   // Trending Post = most replies among Posts
-  const trendingPost = useMemo(() => posts.reduce((a, b) => (a.replies > b.replies ? a : b), posts[0]), [posts]);
+  const trendingPost = useMemo<PostItem>(() => posts.reduce((a: PostItem, b: PostItem) => (a.replies > b.replies ? a : b), posts[0]), [posts]);
 
   // Like handlers
-  const likeWork = (id) => setWorks((prev) => prev.map((w) => (w.id === id ? { ...w, likes: w.likes + 1 } : w)));
-  const likePost = (id) => setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, likes: p.likes + 1 } : p)));
+  const likeWork = (id: number) => setWorks((prev) => prev.map((w) => (w.id === id ? { ...w, likes: w.likes + 1 } : w)));
+  const likePost = (id: number) => setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, likes: p.likes + 1 } : p)));
 
-  const canSeeApply = (threshold) => currentUser.rep >= Math.floor(threshold * 0.7);
+  const canSeeApply = (threshold: number) => currentUser.rep >= Math.floor(threshold * 0.7);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-900">
